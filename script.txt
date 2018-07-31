@@ -1,0 +1,146 @@
+﻿library(RSelenium)
+##lista os argumentos necessários para salvar na pasta C:\temp não será utilizado nesse exemplo 
+##o salvamento em pasta de um arquivo baixado mas já fica a dica de onde configurar a pasta#
+##a barra é assim mesmo invertida#
+eCaps <- list(
+  chromeOptions = list(
+    prefs = list("download.default_directory" = "C:/temp/")
+  )
+)
+
+#passa os argumentos ao driver relativo ao servidor, porta, navegador e preferencias do navegador#
+remDr <- remoteDriver$new(remoteServerAddr = "localhost"
+                          , port = 4445
+                          , browserName = "chrome"
+                          , extraCapabilities  = eCaps
+)
+
+##e-mail e a senha do usuário do power bi para poder abrir e interagir com os dados##
+email<-list("powerscrap@rlcontabilidade-ce.com.br")
+senha<-list("Rafael*1234")
+
+##abre o remote driver do navegador que escolhemos CHROME"
+remDr$open()
+remDr$setTimeout(type = 'page load', milliseconds = 60000)
+
+
+##informar links que você deseja tirar print, não é necessário ser link publico
+##os links devem estar entre aspas duplas "" e sempre precedido de uma virgula se for inserido outro
+sites<-c("https://app.powerbi.com/groups/me/reports/77f7f2e2-43f4-4b24-a012-c2a5e02ac1e4/ReportSection",
+         "https://app.powerbi.com/groups/me/reports/77f7f2e2-43f4-4b24-a012-c2a5e02ac1e4/ReportSection084e7a291660cbe07357"
+)
+
+
+##conta a quantidade de itens no vetor que criamos acima, isso vai ser útil na nomeação dos arquivos e no loop
+contagem<-length(sites)
+
+##acessa o site do power bi
+remDr$navigate("https://powerbi.microsoft.com")
+
+## os códigos nas linhas abaixo fazem um teste tentando avaliar se um elemento na página está presente e visível
+## isso evita que o nosso código quebre sempre que tiver esse tipo de código essa é a função.
+## Estamos procurando um elemento específico na página que é "entrar" no power bi para que possamos cliar nele depois.
+entrar<-NULL
+while(is.null(entrar)){
+  entrar <- tryCatch({remDr$findElement(using = "xpath"
+                                        , "/html/body/header/nav/div/ul[3]/li[1]/a")})
+  
+}
+
+
+entrar$clickElement()
+
+
+
+usuario<-NULL
+
+while(is.null(usuario)){
+  usuario <- tryCatch({remDr$findElement(using = "name"
+                                         , "loginfmt")})
+  
+}
+
+usuario$sendKeysToElement(email)
+
+Sys.sleep(3)
+
+entrar<-remDr$findElement(using = "id"
+                          , "idSIButton9")
+
+
+entrar$clickElement()
+
+Sys.sleep(1)
+
+enviarsenha<-NULL
+while(is.null(enviarsenha)){
+  enviarsenha <- tryCatch({remDr$findElement(using = "id"
+                                             , "i0118")})
+  
+}
+
+
+Sys.sleep(1)
+
+enviarsenha$sendKeysToElement(senha)
+
+Sys.sleep(0.5)
+
+entrar<-remDr$findElement(using = "id"
+                          , "idSIButton9")
+entrar$clickElement()
+
+Sys.sleep(1)
+
+nananinanao<-NULL
+while(is.null(nananinanao)){
+  nananinanao <- tryCatch({remDr$findElement(using = "id"
+                                             , "idBtn_Back")})
+  
+}
+
+nananinanao$clickElement()
+
+remDr$maxWindowSize()
+
+anexos<-c()
+
+
+
+for(i in 1:contagem){
+  
+  remDr$navigate(sites[i])
+  
+  telacheia<-NULL
+  while(is.null(telacheia)){
+    telacheia <- tryCatch({remDr$findElement(using = "xpath"
+                                             , "//*[@id='navBar']/nav/div[2]/button[1]/mat-icon")})
+    
+  }
+  
+  telacheia$clickElement()
+  Sys.sleep(5)
+  remDr$screenshot(file = paste("C:/temp/img",i,".png", sep = ""))
+  
+  anexos[i]<-c(paste("C:/temp/img",i,".png", sep = ""))
+  
+}
+
+remDr$quit()
+
+library(rJava)
+library(mailR)
+
+## Informando dados para enviar e-mail.
+
+send.mail(from = "rafaelpianista@gmail.com",
+          to = c("rafael_pianista@hotmail.com", "rafael@rlcontabilidade-ce.com.br"),
+          subject = paste("Prints de relatórios Diários - Dia: ", format(Sys.Date(), format = "%d/%m/%Y"), sep=" "),
+          body = "Segue anexo prints",
+          smtp = list(host.name = "smtp.gmail.com", port = 587, user.name = "rafaelpianista@gmail.com", passwd = "Web*1234", ssl = TRUE),
+          authenticate = TRUE,
+          send = TRUE,
+          attach.files = anexos
+)
+
+do.call(file.remove, list(list.files("C:/temp", full.names = TRUE)))

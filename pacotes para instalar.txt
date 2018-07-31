@@ -1,0 +1,5 @@
+install.packages("mailR")
+install.packages("devtools")
+devtools::install_github("johndharrison/binman")
+devtools::install_github("johndharrison/wdman")
+devtools::install_github("ropensci/RSelenium")
